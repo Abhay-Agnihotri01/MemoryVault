@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { ChevronLeft, ChevronRight, X, Tag as TagIcon, Folder, Save, PlayCircle } from "lucide-react";
 
 type Tag = { id: string; tag_name: string };
