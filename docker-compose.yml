@@ -1,0 +1,27 @@
+version: '3.8'
+services:
+  db:
+    image: postgres:15-alpine
+    container_name: mediavault-db
+    restart: always
+    environment:
+      POSTGRES_USER: mediavault
+      POSTGRES_PASSWORD: password123
+      POSTGRES_DB: mediavault_db
+    ports:
+      - '5433:5432'
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+  redis:
+    image: redis:7-alpine
+    container_name: mediavault-redis
+    restart: always
+    ports:
+      - '6379:6379'
+    volumes:
+      - redisdata:/data
+
+volumes:
+  pgdata:
+  redisdata:

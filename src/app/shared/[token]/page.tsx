@@ -1,0 +1,153 @@
+"use client";
+
+import { useEffect, useState, use } from "react";
+import { FolderHeart, Loader2, Play } from "lucide-react";
+
+type MediaItem = any;
+
+export default function SharedAlbumPage({ params }: { params: Promise<{ token: string }> }) {
+  const resolvedParams = use(params);
+  const [album, setAlbum] = useState<any>(null);
+  const [isLoading, setIsLoading] = useState(true);
+
+  // Read-only modal state
+  const [selectedMedia, setSelectedMedia] = useState<MediaItem | null>(null);
+
+  useEffect(() => {
+    const fetchSharedAlbum = async () => {
+      try {
+        const res = await fetch(`/api/shared/${resolvedParams.token}`);
+        if (res.ok) {
+          const data = await res.json();
+          setAlbum(data.album);
+        }
+      } catch (err) {
+        console.error(err);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    fetchSharedAlbum();
+  }, [resolvedParams.token]);
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen bg-black">
+        <Loader2 className="w-8 h-8 text-pink-500 animate-spin" />
+      </div>
+    );
+  }
+
+  if (!album) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-screen bg-black">
+        <h2 className="text-2xl font-bold text-white mb-2">Album not found</h2>
+        <p className="text-slate-400">This link may have expired or is invalid.</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-black p-4 md:p-10">
+      <div className="max-w-6xl mx-auto pb-20">
+        
+        {/* Public Header */}
+        <div className="mb-12 flex flex-col md:flex-row items-center gap-6 text-center md:text-left bg-white/5 border border-white/10 rounded-3xl p-8">
+          <div className="w-24 h-24 bg-gradient-to-tr from-pink-500 to-violet-500 text-white rounded-2xl flex items-center justify-center shadow-lg shadow-pink-500/20">
+            <FolderHeart className="w-12 h-12" />
+          </div>
+          <div className="flex-1">
+            <h1 className="text-4xl font-bold text-white mb-2 tracking-tight">{album.title}</h1>
+            <p className="text-slate-300 text-lg mb-4">{album.description || "No description provided."}</p>
+            <div className="flex items-center justify-center md:justify-start gap-3">
+              <img 
+                src={album.user.profile_picture || "https://ui-avatars.com/api/?name=" + album.user.username} 
+                alt={album.user.username} 
+                className="w-8 h-8 rounded-full"
+              />
+              <span className="text-slate-400 text-sm">
+                Shared by <span className="text-white font-medium">@{album.user.username}</span>
+              </span>
+            </div>
+          </div>
+        </div>
+
+        {/* Gallery */}
+        {album.media.length === 0 ? (
+          <div className="flex flex-col items-center justify-center py-20 px-4 border-2 border-dashed border-white/10 rounded-3xl bg-white/[0.02]">
+            <FolderHeart className="w-12 h-12 text-slate-500 mb-4" />
+            <h2 className="text-xl font-semibold text-white mb-2">This album is empty</h2>
+            <p className="text-slate-400">There are no photos here yet.</p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4">
+            {album.media.map((item: any) => (
+              <div
+                key={item.id}
+                onClick={() => setSelectedMedia(item)}
+                className="aspect-square bg-white/5 rounded-xl border border-white/10 overflow-hidden cursor-pointer hover:border-pink-500/50 hover:shadow-[0_0_15px_rgba(236,72,153,0.2)] transition-all relative group"
+              >
+                <div className="w-full h-full transition-transform duration-500 group-hover:scale-105">
+                  {item.media_type === "VIDEO" ? (
+                    <div className="relative w-full h-full">
+                      <video src={item.media_url} className="w-full h-full object-cover" />
+                      <div className="absolute inset-0 bg-black/20 flex items-center justify-center">
+                        <Play className="w-8 h-8 text-white opacity-80" />
+                      </div>
+                    </div>
+                  ) : (
+                    <img src={item.media_url || item.thumbnail_url} alt="Memory" className="w-full h-full object-cover" />
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* Read-Only Lightbox Modal */}
+      {selectedMedia && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 md:p-10 bg-black/90 backdrop-blur-sm" onClick={() => setSelectedMedia(null)}>
+          <div className="relative w-full h-full flex flex-col md:flex-row bg-slate-900 rounded-3xl overflow-hidden shadow-2xl border border-white/10" onClick={e => e.stopPropagation()}>
+            
+            {/* Media Area */}
+            <div className="flex-1 bg-black flex items-center justify-center relative min-h-[50vh]">
+              {selectedMedia.media_type === "VIDEO" ? (
+                <video src={selectedMedia.media_url} controls autoPlay className="max-w-full max-h-full object-contain" />
+              ) : (
+                <img src={selectedMedia.media_url || selectedMedia.thumbnail_url} alt="Memory" className="max-w-full max-h-full object-contain" />
+              )}
+            </div>
+
+            {/* Read-Only Details Area */}
+            <div className="w-full md:w-[400px] bg-slate-900 flex flex-col p-6 overflow-y-auto">
+              <button 
+                onClick={() => setSelectedMedia(null)}
+                className="absolute top-4 right-4 md:hidden w-8 h-8 bg-black/50 text-white rounded-full flex items-center justify-center"
+              >
+                ✕
+              </button>
+
+              <div className="flex items-center gap-3 mb-6">
+                <img src={album.user.profile_picture} className="w-10 h-10 rounded-full" />
+                <div>
+                  <div className="font-semibold text-white">@{album.user.username}</div>
+                  <div className="text-xs text-slate-400">
+                    {new Date(selectedMedia.created_at).toLocaleDateString()}
+                  </div>
+                </div>
+              </div>
+
+              {selectedMedia.caption && (
+                <p className="text-white text-sm whitespace-pre-wrap mb-4">
+                  {selectedMedia.caption}
+                </p>
+              )}
+            </div>
+
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}

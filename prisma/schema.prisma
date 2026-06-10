@@ -1,0 +1,94 @@
+generator client {
+  provider = "prisma-client-js"
+  engineType = "library"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id              String   @id @default(cuid())
+  instagram_id    String?  @unique
+  username        String?
+  name            String?
+  profile_picture String?
+  access_token    String?
+  created_at      DateTime @default(now())
+  albums          Album[]
+}
+
+model Album {
+  id          String   @id @default(cuid())
+  user_id     String
+  user        User     @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  title       String
+  description String?
+  is_public   Boolean  @default(false)
+  share_token String?  @unique
+  created_at  DateTime @default(now())
+  media       Media[]
+}
+
+model Media {
+  id                 String   @id @default(cuid())
+  instagram_media_id String   @unique
+  album_id           String?
+  album              Album?   @relation(fields: [album_id], references: [id], onDelete: SetNull)
+  media_url          String
+  thumbnail_url      String?
+  caption            String?
+  private_description String?
+  media_type         String
+  is_deleted         Boolean  @default(false)
+  is_ai_tagged       Boolean  @default(false)
+  is_face_scanned    Boolean  @default(false)
+  is_favorite        Boolean  @default(false)
+  created_at         DateTime @default(now())
+  posts              Post[]
+  tags               Tag[]
+  faces              Face[]
+}
+
+model Post {
+  id                String    @id @default(cuid())
+  instagram_post_id String?   @unique
+  media_id          String
+  media             Media     @relation(fields: [media_id], references: [id])
+  caption           String?
+  status            String    @default("DRAFT") // DRAFT, PUBLISHED, FAILED
+  published_at      DateTime?
+}
+
+model Tag {
+  id         String   @id @default(cuid())
+  media_id   String
+  tag_name   String
+  media      Media    @relation(fields: [media_id], references: [id], onDelete: Cascade)
+
+  @@unique([media_id, tag_name])
+}
+
+model Person {
+  id               String   @id @default(cuid())
+  name             String
+  cover_image_url  String?
+  faces            Face[]
+  created_at       DateTime @default(now())
+}
+
+model Face {
+  id               String   @id @default(cuid())
+  media_id         String
+  person_id        String?
+  descriptor       Json     // Store the 128-float array
+  box_x            Float
+  box_y            Float
+  box_width        Float
+  box_height       Float
+  
+  media            Media    @relation(fields: [media_id], references: [id], onDelete: Cascade)
+  person           Person?  @relation(fields: [person_id], references: [id], onDelete: SetNull)
+  created_at       DateTime @default(now())
+}
