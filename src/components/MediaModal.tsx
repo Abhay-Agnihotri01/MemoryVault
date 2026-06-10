@@ -53,15 +53,17 @@ export default function MediaModal({
   }, [currentIndex, mediaList]);
 
   // Mobile Swipe Handlers
-  const [touchStart, setTouchStart] = useState<number | null>(null);
-  const handleTouchStart = (e: React.TouchEvent) => setTouchStart(e.targetTouches[0].clientX);
+  const touchStartX = React.useRef<number | null>(null);
+  const handleTouchStart = (e: React.TouchEvent) => {
+    touchStartX.current = e.targetTouches[0].clientX;
+  };
   const handleTouchEnd = (e: React.TouchEvent) => {
-    if (!touchStart) return;
-    const touchEnd = e.changedTouches[0].clientX;
-    const diff = touchStart - touchEnd;
+    if (touchStartX.current === null) return;
+    const touchEndX = e.changedTouches[0].clientX;
+    const diff = touchStartX.current - touchEndX;
     if (diff > 50) handleNext();
     if (diff < -50) handlePrev();
-    setTouchStart(null);
+    touchStartX.current = null;
   };
 
   const [description, setDescription] = useState("");
@@ -119,28 +121,34 @@ export default function MediaModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
-      <div className="bg-slate-900 border border-white/10 rounded-3xl w-full max-w-5xl overflow-hidden flex flex-col md:flex-row max-h-[90vh]">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-black/90 backdrop-blur-sm">
+      <div className="bg-slate-900 border border-white/10 rounded-2xl sm:rounded-3xl w-full max-w-5xl overflow-hidden flex flex-col md:flex-row h-[90vh] md:max-h-[90vh]">
+        
         {/* Left Side: Media Viewer */}
         <div 
-          className="w-full md:w-1/2 bg-black flex items-center justify-center relative min-h-[300px] group"
+          className="w-full h-[55%] md:h-full md:w-1/2 bg-black flex items-center justify-center relative group shrink-0"
           onTouchStart={handleTouchStart}
           onTouchEnd={handleTouchEnd}
         >
+          {/* Mobile swipe hint overlay (fades out) */}
+          <div className="md:hidden absolute top-4 left-1/2 -translate-x-1/2 bg-black/50 text-white/70 text-xs px-3 py-1 rounded-full backdrop-blur-md opacity-0 animate-[fadeOut_2s_ease-out_1s_forwards] pointer-events-none z-20">
+            Swipe to navigate
+          </div>
+
           {currentIndex > 0 && (
             <button 
               onClick={handlePrev} 
-              className="absolute left-4 top-1/2 -translate-y-1/2 bg-black/50 hover:bg-black/80 text-white p-3 rounded-full opacity-0 group-hover:opacity-100 transition-all backdrop-blur-md z-10 border border-white/10"
+              className="absolute left-2 md:left-4 top-1/2 -translate-y-1/2 bg-black/50 hover:bg-black/80 text-white p-2 md:p-3 rounded-full opacity-0 md:group-hover:opacity-100 transition-all backdrop-blur-md z-10 border border-white/10"
             >
-              <ChevronLeft className="w-6 h-6" />
+              <ChevronLeft className="w-5 h-5 md:w-6 md:h-6" />
             </button>
           )}
           {currentIndex < mediaList.length - 1 && (
             <button 
               onClick={handleNext} 
-              className="absolute right-4 top-1/2 -translate-y-1/2 bg-black/50 hover:bg-black/80 text-white p-3 rounded-full opacity-0 group-hover:opacity-100 transition-all backdrop-blur-md z-10 border border-white/10"
+              className="absolute right-2 md:right-4 top-1/2 -translate-y-1/2 bg-black/50 hover:bg-black/80 text-white p-2 md:p-3 rounded-full opacity-0 md:group-hover:opacity-100 transition-all backdrop-blur-md z-10 border border-white/10"
             >
-              <ChevronRight className="w-6 h-6" />
+              <ChevronRight className="w-5 h-5 md:w-6 md:h-6" />
             </button>
           )}
 
@@ -148,19 +156,20 @@ export default function MediaModal({
             <video
               src={media.media_url}
               controls
-              className="max-w-full max-h-[90vh] object-contain"
+              className="max-w-full h-full object-contain"
             />
           ) : (
             <img
               src={media.media_url || media.thumbnail_url}
               alt="Memory"
-              className="max-w-full max-h-[90vh] object-contain select-none"
+              className="max-w-full h-full object-contain select-none"
+              draggable={false}
             />
           )}
         </div>
 
         {/* Right Side: Annotations */}
-        <div className="w-full md:w-1/2 p-6 flex flex-col h-full overflow-y-auto">
+        <div className="w-full h-[45%] md:h-full md:w-1/2 p-4 md:p-6 flex flex-col overflow-y-auto">
           <div className="flex justify-between items-center mb-6">
             <h2 className="text-xl font-bold text-white">Memory Details</h2>
             <button
