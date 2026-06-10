@@ -160,8 +160,8 @@ export default function DashboardPage() {
   }
 
   return (
-    <div className="max-w-6xl mx-auto pb-20">
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-10">
+    <div className="max-w-7xl mx-auto pb-20">
+      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 mb-10">
         <div>
           <h1 className="text-3xl font-bold text-white mb-2 flex items-center gap-3">
             Your Media <Sparkles className="w-6 h-6 text-pink-400" />
@@ -170,12 +170,14 @@ export default function DashboardPage() {
             Welcome back, {session?.user?.name || "Explorer"}! All your synced memories will appear here.
           </p>
         </div>
-        <div className="flex items-center gap-4">
-          <SearchBar onSearch={handleSearch} />
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-4 w-full lg:w-auto">
+          <div className="w-full sm:w-auto flex-1">
+            <SearchBar onSearch={handleSearch} />
+          </div>
           <button
             onClick={triggerSync}
             disabled={isSyncing}
-            className="flex items-center gap-2 bg-gradient-to-r from-pink-500 to-violet-500 hover:from-pink-400 hover:to-violet-400 text-white px-5 py-3 rounded-2xl font-medium transition-all shadow-lg shadow-pink-500/25 disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
+            className="flex items-center justify-center gap-2 bg-gradient-to-r from-pink-500 to-violet-500 hover:from-pink-400 hover:to-violet-400 text-white px-5 py-3 rounded-2xl font-medium transition-all shadow-lg shadow-pink-500/25 disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap shrink-0"
           >
             {isSyncing ? <Loader2 className="w-5 h-5 animate-spin" /> : <ImagePlus className="w-5 h-5" />}
             {isSyncing ? "Syncing..." : "Sync"}
@@ -206,7 +208,7 @@ export default function DashboardPage() {
           </p>
         </div>
       ) : (
-        <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4">
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
           {media.map((item) => (
             <MediaCard
               key={item.id}

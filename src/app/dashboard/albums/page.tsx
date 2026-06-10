@@ -116,7 +116,7 @@ export default function AlbumsPage() {
           </p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
           {albums.map(album => (
             <Link href={`/dashboard/albums/${album.id}`} key={album.id}>
               <div className="bg-white/5 border border-white/10 rounded-2xl p-6 hover:bg-white/10 transition-colors cursor-pointer group h-full flex flex-col">

@@ -146,7 +146,7 @@ export default function TimelinePage() {
                       setActiveMonthList(items);
                       setSelectedMedia(items[0]);
                     }}
-                    className="relative w-64 h-64 cursor-pointer group/deck"
+                    className="relative w-48 h-48 sm:w-64 sm:h-64 cursor-pointer group/deck"
                   >
                     {previewItems.map((item, idx) => {
                       const isTop = idx === previewItems.length - 1;
