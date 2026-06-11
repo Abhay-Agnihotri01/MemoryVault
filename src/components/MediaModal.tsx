@@ -42,6 +42,9 @@ export default function MediaModal({
   const [selectedAlbumId, setSelectedAlbumId] = useState<string>("");
   const [isSaving, setIsSaving] = useState(false);
   const [localTags, setLocalTags] = useState<Tag[]>([]);
+  
+  // Track zoom state to prevent swiping when zoomed in, and prevent panning when zoomed out
+  const [isZoomed, setIsZoomed] = useState(false);
 
   const handleNext = () => {
     if (currentIndex < mediaList.length - 1) onNavigate(mediaList[currentIndex + 1]);
@@ -68,10 +71,12 @@ export default function MediaModal({
   // Mobile Swipe Handlers
   const touchStartX = React.useRef<number | null>(null);
   const handleTouchStart = (e: React.TouchEvent) => {
+    if (isZoomed) return; // Do not intercept swipe if zoomed in
     if (e.touches.length > 1) return; // Ignore multi-touch (e.g. pinch to zoom)
     touchStartX.current = e.targetTouches[0].clientX;
   };
   const handleTouchEnd = (e: React.TouchEvent) => {
+    if (isZoomed) return; // Do not intercept swipe if zoomed in
     if (touchStartX.current === null) return;
     const touchEndX = e.changedTouches[0].clientX;
     const diff = touchStartX.current - touchEndX;
@@ -85,8 +90,7 @@ export default function MediaModal({
       setDescription(media.private_description || "");
       setSelectedAlbumId(media.album?.id || "");
       setLocalTags(media.tags || []);
-      // Reset edit panel state when changing media if on mobile, optional.
-      // setShowEditPanel(false);
+      setIsZoomed(false); // Reset zoom state when media changes
     }
   }, [media]);
 
@@ -149,6 +153,7 @@ export default function MediaModal({
           />
         ) : (
           <TransformWrapper
+            key={media.id} // Forces fresh mount for new media to reset zoom completely
             initialScale={1}
             minScale={1}
             maxScale={4}
@@ -156,6 +161,8 @@ export default function MediaModal({
             wheel={{ step: 0.1 }}
             pinch={{ step: 5 }}
             doubleClick={{ disabled: false, step: 1, mode: "toggle" }}
+            panning={{ disabled: !isZoomed }} // Only allow dragging image around if we are actually zoomed in
+            onTransformed={(ref) => setIsZoomed(ref.state.scale > 1.05)} // Update zoom state
           >
             {({ zoomIn, zoomOut, resetTransform }) => (
               <TransformComponent wrapperClass="w-full h-full !flex items-center justify-center" contentClass="w-full h-full flex items-center justify-center">
