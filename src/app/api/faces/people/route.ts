@@ -17,8 +17,17 @@ export async function GET() {
     const session = await getServerSession(authOptions);
     if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
+    const user = await prisma.user.findFirst({
+      where: { instagram_id: session.providerAccountId }
+    });
+
+    if (!user) {
+      return NextResponse.json({ error: "User not found" }, { status: 404 });
+    }
+
     // 1. Fetch named people
     const namedPeople = await prisma.person.findMany({
+      where: { user_id: user.id },
       include: {
         _count: { select: { faces: true } }
       },
@@ -27,7 +36,10 @@ export async function GET() {
 
     // 2. Fetch all unassigned faces to dynamically cluster them
     const unassignedFaces = await prisma.face.findMany({
-      where: { person_id: null },
+      where: { 
+        person_id: null,
+        media: { user_id: user.id }
+      },
       include: {
         media: { select: { thumbnail_url: true, media_url: true } }
       }

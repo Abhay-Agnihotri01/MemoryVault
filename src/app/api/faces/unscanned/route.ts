@@ -8,8 +8,17 @@ export async function GET() {
     const session = await getServerSession(authOptions);
     if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
+    const user = await prisma.user.findFirst({
+      where: { instagram_id: session.providerAccountId }
+    });
+
+    if (!user) {
+      return NextResponse.json({ error: "User not found" }, { status: 404 });
+    }
+
     const media = await prisma.media.findMany({
       where: {
+        user_id: user.id,
         is_face_scanned: false,
         is_deleted: false,
         media_type: { not: "VIDEO" }

@@ -17,6 +17,8 @@ model User {
   access_token    String?
   created_at      DateTime @default(now())
   albums          Album[]
+  media           Media[]
+  persons         Person[]
 }
 
 model Album {
@@ -33,6 +35,8 @@ model Album {
 
 model Media {
   id                 String   @id @default(cuid())
+  user_id            String
+  user               User     @relation(fields: [user_id], references: [id], onDelete: Cascade)
   instagram_media_id String   @unique
   album_id           String?
   album              Album?   @relation(fields: [album_id], references: [id], onDelete: SetNull)
@@ -72,6 +76,8 @@ model Tag {
 
 model Person {
   id               String   @id @default(cuid())
+  user_id          String
+  user             User     @relation(fields: [user_id], references: [id], onDelete: Cascade)
   name             String
   cover_image_url  String?
   faces            Face[]

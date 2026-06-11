@@ -11,13 +11,21 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
+    const user = await prisma.user.findFirst({
+      where: { instagram_id: session.providerAccountId }
+    });
+
+    if (!user) {
+      return NextResponse.json({ error: "User not found" }, { status: 404 });
+    }
+
     const { searchParams } = new URL(request.url);
     const album_id = searchParams.get("album_id");
     const is_deleted = searchParams.get("is_deleted") === "true";
     const search = searchParams.get("search");
     const is_favorite = searchParams.get("is_favorite") === "true";
     
-    const whereClause: any = { is_deleted };
+    const whereClause: any = { is_deleted, user_id: user.id };
     if (album_id) {
       whereClause.album_id = album_id;
     }

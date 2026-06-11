@@ -42,6 +42,7 @@ export async function POST() {
             },
             create: {
               instagram_media_id: child.id,
+              user_id: user.id,
               media_url: child.media_url || "",
               thumbnail_url: child.thumbnail_url || child.media_url || "",
               caption: item.caption || "",
@@ -61,6 +62,7 @@ export async function POST() {
           },
           create: {
             instagram_media_id: item.id,
+            user_id: user.id,
             media_url: item.media_url || "",
             thumbnail_url: item.thumbnail_url || item.media_url || "",
             caption: item.caption || "",

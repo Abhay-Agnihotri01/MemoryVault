@@ -8,6 +8,14 @@ export async function POST(req: Request) {
     const session = await getServerSession(authOptions);
     if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
+    const user = await prisma.user.findFirst({
+      where: { instagram_id: session.providerAccountId }
+    });
+
+    if (!user) {
+      return NextResponse.json({ error: "User not found" }, { status: 404 });
+    }
+
     const { name, faceIds, coverImageUrl } = await req.json();
 
     if (!name || !faceIds || faceIds.length === 0) {
@@ -17,6 +25,7 @@ export async function POST(req: Request) {
     // Create the Person
     const person = await prisma.person.create({
       data: {
+        user_id: user.id,
         name,
         cover_image_url: coverImageUrl
       }
