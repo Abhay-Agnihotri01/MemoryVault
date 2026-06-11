@@ -95,13 +95,22 @@ export async function POST(request: Request) {
       console.error("Failed to fetch final media url", e);
     }
 
+    const user = await prisma.user.findFirst({
+      where: { instagram_id: session.providerAccountId }
+    });
+
+    if (!user) {
+      return NextResponse.json({ error: "User not found" }, { status: 404 });
+    }
+
     // Step 5: Save to Database
     const media = await prisma.media.create({
       data: {
+        user_id: user.id,
         instagram_media_id: publishedPostId,
         media_url: finalMediaUrl,
         media_type: "IMAGE",
-        caption: caption,
+        caption: caption || "",
       }
     });
 
