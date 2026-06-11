@@ -55,6 +55,7 @@ export default function MediaModal({
   // Mobile Swipe Handlers
   const touchStartX = React.useRef<number | null>(null);
   const handleTouchStart = (e: React.TouchEvent) => {
+    if (e.touches.length > 1) return; // Ignore multi-touch (e.g. pinch to zoom)
     touchStartX.current = e.targetTouches[0].clientX;
   };
   const handleTouchEnd = (e: React.TouchEvent) => {

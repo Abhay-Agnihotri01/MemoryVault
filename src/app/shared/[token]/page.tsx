@@ -118,6 +118,7 @@ export default function SharedAlbumPage({ params }: { params: Promise<{ token: s
         };
 
         const handleTouchStart = (e: React.TouchEvent) => {
+          if (e.touches.length > 1) return; // Ignore multi-touch (e.g. pinch to zoom)
           (window as any).sharedTouchStartX = e.targetTouches[0].clientX;
         };
 
