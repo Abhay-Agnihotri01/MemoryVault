@@ -52,10 +52,11 @@ export default function DashboardPage() {
         const data = await res.json();
         setMedia(data.media || []);
         
-        if (selectedMedia) {
-          const updated = data.media.find((m: MediaItem) => m.id === selectedMedia.id);
-          if (updated) setSelectedMedia(updated);
-        }
+        setSelectedMedia(prev => {
+          if (!prev) return prev;
+          const updated = data.media.find((m: MediaItem) => m.id === prev.id);
+          return updated || prev;
+        });
       }
     } catch (err) {
       console.error("Failed to fetch local media:", err);

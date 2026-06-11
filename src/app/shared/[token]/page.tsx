@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useState, use } from "react";
-import { FolderHeart, Loader2, Play } from "lucide-react";
+import { FolderHeart, Loader2, Play, ChevronLeft, ChevronRight, X } from "lucide-react";
+import { TransformWrapper, TransformComponent } from "react-zoom-pan-pinch";
 
 type MediaItem = any;
 
@@ -12,6 +13,7 @@ export default function SharedAlbumPage({ params }: { params: Promise<{ token: s
 
   // Read-only modal state
   const [selectedMedia, setSelectedMedia] = useState<MediaItem | null>(null);
+  const [isZoomed, setIsZoomed] = useState(false);
 
   useEffect(() => {
     const fetchSharedAlbum = async () => {
@@ -29,6 +31,32 @@ export default function SharedAlbumPage({ params }: { params: Promise<{ token: s
     };
     fetchSharedAlbum();
   }, [resolvedParams.token]);
+
+  // Keyboard navigation for Modal
+  useEffect(() => {
+    if (!selectedMedia || !album) return;
+    const currentIndex = album.media.findIndex((m: any) => m.id === selectedMedia.id);
+    
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "ArrowRight" && currentIndex < album.media.length - 1) {
+        setSelectedMedia(album.media[currentIndex + 1]);
+      }
+      if (e.key === "ArrowLeft" && currentIndex > 0) {
+        setSelectedMedia(album.media[currentIndex - 1]);
+      }
+      if (e.key === "Escape") {
+        setSelectedMedia(null);
+      }
+    };
+    
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [selectedMedia, album]);
+
+  // Reset zoom when photo changes
+  useEffect(() => {
+    setIsZoomed(false);
+  }, [selectedMedia]);
 
   if (isLoading) {
     return (
@@ -118,11 +146,13 @@ export default function SharedAlbumPage({ params }: { params: Promise<{ token: s
         };
 
         const handleTouchStart = (e: React.TouchEvent) => {
+          if (isZoomed) return;
           if (e.touches.length > 1) return; // Ignore multi-touch (e.g. pinch to zoom)
           (window as any).sharedTouchStartX = e.targetTouches[0].clientX;
         };
 
         const handleTouchEnd = (e: React.TouchEvent) => {
+          if (isZoomed) return;
           const startX = (window as any).sharedTouchStartX;
           if (startX === undefined || startX === null) return;
           const endX = e.changedTouches[0].clientX;
@@ -133,12 +163,12 @@ export default function SharedAlbumPage({ params }: { params: Promise<{ token: s
         };
 
         return (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-black/90 backdrop-blur-sm" onClick={() => setSelectedMedia(null)}>
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/95 backdrop-blur-xl" onClick={() => setSelectedMedia(null)}>
             <div className="relative w-full h-[90vh] md:max-h-[90vh] flex flex-col md:flex-row bg-slate-900 rounded-2xl sm:rounded-3xl overflow-hidden shadow-2xl border border-white/10" onClick={e => e.stopPropagation()}>
               
               {/* Media Area */}
               <div 
-                className="flex-1 w-full h-[55%] md:h-full md:w-1/2 bg-black flex items-center justify-center relative min-h-[50vh] group shrink-0"
+                className="flex-1 w-full h-[55%] md:h-full md:w-[60%] bg-black flex items-center justify-center relative min-h-[50vh] group shrink-0 overflow-hidden"
                 onTouchStart={handleTouchStart}
                 onTouchEnd={handleTouchEnd}
               >
@@ -150,38 +180,60 @@ export default function SharedAlbumPage({ params }: { params: Promise<{ token: s
                 {currentIndex > 0 && (
                   <button 
                     onClick={handlePrev} 
-                    className="absolute left-2 md:left-4 top-1/2 -translate-y-1/2 bg-black/50 hover:bg-black/80 text-white p-2 md:p-3 rounded-full opacity-0 md:group-hover:opacity-100 transition-all backdrop-blur-md z-10 border border-white/10"
+                    className="absolute left-2 md:left-4 top-1/2 -translate-y-1/2 bg-black/50 hover:bg-black/80 text-white p-2 md:p-3 rounded-full opacity-0 md:group-hover:opacity-100 transition-all backdrop-blur-md z-30 border border-white/10"
                   >
-                    <svg className="w-5 h-5 md:w-6 md:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg>
+                    <ChevronLeft className="w-5 h-5 md:w-6 md:h-6" />
                   </button>
                 )}
                 {currentIndex < album.media.length - 1 && (
                   <button 
                     onClick={handleNext} 
-                    className="absolute right-2 md:right-4 top-1/2 -translate-y-1/2 bg-black/50 hover:bg-black/80 text-white p-2 md:p-3 rounded-full opacity-0 md:group-hover:opacity-100 transition-all backdrop-blur-md z-10 border border-white/10"
+                    className="absolute right-2 md:right-4 top-1/2 -translate-y-1/2 bg-black/50 hover:bg-black/80 text-white p-2 md:p-3 rounded-full opacity-0 md:group-hover:opacity-100 transition-all backdrop-blur-md z-30 border border-white/10"
                   >
-                    <svg className="w-5 h-5 md:w-6 md:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
+                    <ChevronRight className="w-5 h-5 md:w-6 md:h-6" />
                   </button>
                 )}
 
                 {selectedMedia.media_type === "VIDEO" ? (
                   <video src={selectedMedia.media_url} controls autoPlay className="max-w-full h-full object-contain" />
                 ) : (
-                  <img src={selectedMedia.media_url || selectedMedia.thumbnail_url} alt="Memory" className="max-w-full h-full object-contain select-none" draggable={false} />
+                  <TransformWrapper
+                    key={selectedMedia.id}
+                    initialScale={1}
+                    minScale={1}
+                    maxScale={4}
+                    centerOnInit
+                    wheel={{ step: 0.1 }}
+                    pinch={{ step: 5 }}
+                    doubleClick={{ disabled: false, step: 1, mode: "toggle" }}
+                    panning={{ disabled: !isZoomed }}
+                    onTransformed={(ref) => setIsZoomed(ref.state.scale > 1.05)}
+                  >
+                    {({ zoomIn, zoomOut, resetTransform }) => (
+                      <TransformComponent wrapperClass="w-full h-full !flex items-center justify-center" contentClass="w-full h-full flex items-center justify-center">
+                        <img
+                          src={selectedMedia.media_url || selectedMedia.thumbnail_url}
+                          alt="Memory"
+                          className="max-w-full max-h-[100dvh] object-contain select-none"
+                          draggable={false}
+                        />
+                      </TransformComponent>
+                    )}
+                  </TransformWrapper>
                 )}
               </div>
 
               {/* Read-Only Details Area */}
-              <div className="w-full h-[45%] md:h-full md:w-[400px] bg-slate-900 flex flex-col p-4 md:p-6 overflow-y-auto">
+              <div className="w-full h-[45%] md:h-full md:w-[400px] bg-slate-900 flex flex-col p-4 md:p-6 overflow-y-auto border-l border-white/10">
                 <button 
                   onClick={() => setSelectedMedia(null)}
-                  className="absolute top-4 right-4 md:hidden w-8 h-8 bg-black/50 text-white rounded-full flex items-center justify-center z-50"
+                  className="absolute top-4 right-4 md:hidden w-8 h-8 bg-black/50 text-white rounded-full flex items-center justify-center z-50 border border-white/10"
                 >
-                  ✕
+                  <X className="w-4 h-4" />
                 </button>
 
                 <div className="flex items-center gap-3 mb-6">
-                  <img src={album.user.profile_picture} className="w-10 h-10 rounded-full" />
+                  <img src={album.user.profile_picture} className="w-10 h-10 rounded-full border border-white/20" />
                   <div>
                     <div className="font-semibold text-white">@{album.user.username}</div>
                     <div className="text-xs text-slate-400">
@@ -191,9 +243,11 @@ export default function SharedAlbumPage({ params }: { params: Promise<{ token: s
                 </div>
 
                 {selectedMedia.caption && (
-                  <p className="text-white text-sm whitespace-pre-wrap mb-4">
-                    {selectedMedia.caption}
-                  </p>
+                  <div className="bg-black/30 border border-white/10 rounded-xl p-4">
+                    <p className="text-white text-sm leading-relaxed whitespace-pre-wrap">
+                      {selectedMedia.caption}
+                    </p>
+                  </div>
                 )}
               </div>
 
