@@ -163,7 +163,7 @@ export default function SharedAlbumPage({ params }: { params: Promise<{ token: s
         };
 
         return (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/95 backdrop-blur-xl" onClick={() => setSelectedMedia(null)}>
+          <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/95 backdrop-blur-xl" onClick={() => setSelectedMedia(null)}>
             <div className="relative w-full h-[90vh] md:max-h-[90vh] flex flex-col md:flex-row bg-slate-900 rounded-2xl sm:rounded-3xl overflow-hidden shadow-2xl border border-white/10" onClick={e => e.stopPropagation()}>
               
               {/* Media Area */}
