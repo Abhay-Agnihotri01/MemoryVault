@@ -6,7 +6,13 @@ const config: CapacitorConfig = {
   webDir: 'out', // We don't actually build it, but it's required
   server: {
     url: 'https://memory-vault-5ii2.vercel.app',
-    cleartext: true
+    cleartext: true,
+    allowNavigation: [
+      '*.facebook.com',
+      '*.instagram.com',
+      'facebook.com',
+      'instagram.com'
+    ]
   }
 };
 
