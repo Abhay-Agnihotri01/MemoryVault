@@ -106,48 +106,100 @@ export default function SharedAlbumPage({ params }: { params: Promise<{ token: s
       </div>
 
       {/* Read-Only Lightbox Modal */}
-      {selectedMedia && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 md:p-10 bg-black/90 backdrop-blur-sm" onClick={() => setSelectedMedia(null)}>
-          <div className="relative w-full h-full flex flex-col md:flex-row bg-slate-900 rounded-3xl overflow-hidden shadow-2xl border border-white/10" onClick={e => e.stopPropagation()}>
-            
-            {/* Media Area */}
-            <div className="flex-1 bg-black flex items-center justify-center relative min-h-[50vh]">
-              {selectedMedia.media_type === "VIDEO" ? (
-                <video src={selectedMedia.media_url} controls autoPlay className="max-w-full max-h-full object-contain" />
-              ) : (
-                <img src={selectedMedia.media_url || selectedMedia.thumbnail_url} alt="Memory" className="max-w-full max-h-full object-contain" />
-              )}
-            </div>
+      {selectedMedia && (() => {
+        const currentIndex = album.media.findIndex((m: any) => m.id === selectedMedia.id);
+        
+        const handleNext = () => {
+          if (currentIndex < album.media.length - 1) setSelectedMedia(album.media[currentIndex + 1]);
+        };
+        
+        const handlePrev = () => {
+          if (currentIndex > 0) setSelectedMedia(album.media[currentIndex - 1]);
+        };
 
-            {/* Read-Only Details Area */}
-            <div className="w-full md:w-[400px] bg-slate-900 flex flex-col p-6 overflow-y-auto">
-              <button 
-                onClick={() => setSelectedMedia(null)}
-                className="absolute top-4 right-4 md:hidden w-8 h-8 bg-black/50 text-white rounded-full flex items-center justify-center"
+        const handleTouchStart = (e: React.TouchEvent) => {
+          (window as any).sharedTouchStartX = e.targetTouches[0].clientX;
+        };
+
+        const handleTouchEnd = (e: React.TouchEvent) => {
+          const startX = (window as any).sharedTouchStartX;
+          if (startX === undefined || startX === null) return;
+          const endX = e.changedTouches[0].clientX;
+          const diff = startX - endX;
+          if (diff > 50) handleNext();
+          if (diff < -50) handlePrev();
+          (window as any).sharedTouchStartX = null;
+        };
+
+        return (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-black/90 backdrop-blur-sm" onClick={() => setSelectedMedia(null)}>
+            <div className="relative w-full h-[90vh] md:max-h-[90vh] flex flex-col md:flex-row bg-slate-900 rounded-2xl sm:rounded-3xl overflow-hidden shadow-2xl border border-white/10" onClick={e => e.stopPropagation()}>
+              
+              {/* Media Area */}
+              <div 
+                className="flex-1 w-full h-[55%] md:h-full md:w-1/2 bg-black flex items-center justify-center relative min-h-[50vh] group shrink-0"
+                onTouchStart={handleTouchStart}
+                onTouchEnd={handleTouchEnd}
               >
-                ✕
-              </button>
-
-              <div className="flex items-center gap-3 mb-6">
-                <img src={album.user.profile_picture} className="w-10 h-10 rounded-full" />
-                <div>
-                  <div className="font-semibold text-white">@{album.user.username}</div>
-                  <div className="text-xs text-slate-400">
-                    {new Date(selectedMedia.created_at).toLocaleDateString()}
-                  </div>
+                {/* Mobile swipe hint overlay (fades out) */}
+                <div className="md:hidden absolute top-4 left-1/2 -translate-x-1/2 bg-black/50 text-white/70 text-xs px-3 py-1 rounded-full backdrop-blur-md opacity-0 animate-[fadeOut_2s_ease-out_1s_forwards] pointer-events-none z-20">
+                  Swipe to navigate
                 </div>
+
+                {currentIndex > 0 && (
+                  <button 
+                    onClick={handlePrev} 
+                    className="absolute left-2 md:left-4 top-1/2 -translate-y-1/2 bg-black/50 hover:bg-black/80 text-white p-2 md:p-3 rounded-full opacity-0 md:group-hover:opacity-100 transition-all backdrop-blur-md z-10 border border-white/10"
+                  >
+                    <svg className="w-5 h-5 md:w-6 md:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg>
+                  </button>
+                )}
+                {currentIndex < album.media.length - 1 && (
+                  <button 
+                    onClick={handleNext} 
+                    className="absolute right-2 md:right-4 top-1/2 -translate-y-1/2 bg-black/50 hover:bg-black/80 text-white p-2 md:p-3 rounded-full opacity-0 md:group-hover:opacity-100 transition-all backdrop-blur-md z-10 border border-white/10"
+                  >
+                    <svg className="w-5 h-5 md:w-6 md:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
+                  </button>
+                )}
+
+                {selectedMedia.media_type === "VIDEO" ? (
+                  <video src={selectedMedia.media_url} controls autoPlay className="max-w-full h-full object-contain" />
+                ) : (
+                  <img src={selectedMedia.media_url || selectedMedia.thumbnail_url} alt="Memory" className="max-w-full h-full object-contain select-none" draggable={false} />
+                )}
               </div>
 
-              {selectedMedia.caption && (
-                <p className="text-white text-sm whitespace-pre-wrap mb-4">
-                  {selectedMedia.caption}
-                </p>
-              )}
-            </div>
+              {/* Read-Only Details Area */}
+              <div className="w-full h-[45%] md:h-full md:w-[400px] bg-slate-900 flex flex-col p-4 md:p-6 overflow-y-auto">
+                <button 
+                  onClick={() => setSelectedMedia(null)}
+                  className="absolute top-4 right-4 md:hidden w-8 h-8 bg-black/50 text-white rounded-full flex items-center justify-center z-50"
+                >
+                  ✕
+                </button>
 
+                <div className="flex items-center gap-3 mb-6">
+                  <img src={album.user.profile_picture} className="w-10 h-10 rounded-full" />
+                  <div>
+                    <div className="font-semibold text-white">@{album.user.username}</div>
+                    <div className="text-xs text-slate-400">
+                      {new Date(selectedMedia.created_at).toLocaleDateString()}
+                    </div>
+                  </div>
+                </div>
+
+                {selectedMedia.caption && (
+                  <p className="text-white text-sm whitespace-pre-wrap mb-4">
+                    {selectedMedia.caption}
+                  </p>
+                )}
+              </div>
+
+            </div>
           </div>
-        </div>
-      )}
+        );
+      })()}
     </div>
   );
 }
