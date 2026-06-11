@@ -162,7 +162,7 @@ export default function MediaModal({
             pinch={{ step: 5 }}
             doubleClick={{ disabled: false, step: 1, mode: "toggle" }}
             panning={{ disabled: !isZoomed }} // Only allow dragging image around if we are actually zoomed in
-            onTransformed={(ref) => setIsZoomed(ref.state.scale > 1.05)} // Update zoom state
+            onTransform={(ref) => setIsZoomed(ref.state.scale > 1.05)} // Update zoom state
           >
             {({ zoomIn, zoomOut, resetTransform }) => (
               <TransformComponent wrapperClass="w-full h-full !flex items-center justify-center" contentClass="w-full h-full flex items-center justify-center">
