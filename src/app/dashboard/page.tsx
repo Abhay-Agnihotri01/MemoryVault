@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useSession } from "next-auth/react";
+import { useRouter } from "next/navigation";
 import { ImagePlus, Images, Sparkles, Loader2 } from "lucide-react";
 import MediaModal from "@/components/MediaModal";
 import MediaCard from "@/components/MediaCard";
@@ -82,15 +83,17 @@ export default function DashboardPage() {
     }
   };
 
+  const router = useRouter();
+
   useEffect(() => {
-    if (window.location.hash === '#_=_') {
-      window.history.replaceState('', document.title, window.location.pathname + window.location.search);
+    if (typeof window !== "undefined" && window.location.hash === '#_=_') {
+      router.replace(window.location.pathname + window.location.search);
     }
 
     if (status === "authenticated") {
       fetchLocalMedia().then(() => triggerSync());
     }
-  }, [status]);
+  }, [status, router]);
 
   const toggleSelection = (id: string) => {
     setSelectedMediaIds(prev => {
