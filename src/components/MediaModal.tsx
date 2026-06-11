@@ -1,7 +1,8 @@
 "use client";
 
 import React, { useState, useEffect, useRef } from "react";
-import { ChevronLeft, ChevronRight, X, Tag as TagIcon, Folder, Save, PlayCircle } from "lucide-react";
+import { ChevronLeft, ChevronRight, X, Tag as TagIcon, Folder, Save, Info } from "lucide-react";
+import { TransformWrapper, TransformComponent } from "react-zoom-pan-pinch";
 
 type Tag = { id: string; tag_name: string };
 type Album = { id: string; title: string };
@@ -34,6 +35,14 @@ export default function MediaModal({
   const currentIndex = mediaList.findIndex(m => m.id === currentMediaId);
   const media = currentIndex !== -1 ? mediaList[currentIndex] : null;
 
+  const [showEditPanel, setShowEditPanel] = useState(false);
+  const [description, setDescription] = useState("");
+  const [newTag, setNewTag] = useState("");
+  const [albums, setAlbums] = useState<Album[]>([]);
+  const [selectedAlbumId, setSelectedAlbumId] = useState<string>("");
+  const [isSaving, setIsSaving] = useState(false);
+  const [localTags, setLocalTags] = useState<Tag[]>([]);
+
   const handleNext = () => {
     if (currentIndex < mediaList.length - 1) onNavigate(mediaList[currentIndex + 1]);
   };
@@ -47,10 +56,14 @@ export default function MediaModal({
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === "ArrowRight") handleNext();
       if (e.key === "ArrowLeft") handlePrev();
+      if (e.key === "Escape") {
+        if (showEditPanel) setShowEditPanel(false);
+        else onClose();
+      }
     };
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [currentIndex, mediaList]);
+  }, [currentIndex, mediaList, showEditPanel, onClose]);
 
   // Mobile Swipe Handlers
   const touchStartX = React.useRef<number | null>(null);
@@ -67,18 +80,13 @@ export default function MediaModal({
     touchStartX.current = null;
   };
 
-  const [description, setDescription] = useState("");
-  const [newTag, setNewTag] = useState("");
-  const [albums, setAlbums] = useState<Album[]>([]);
-  const [selectedAlbumId, setSelectedAlbumId] = useState<string>("");
-  const [isSaving, setIsSaving] = useState(false);
-  const [localTags, setLocalTags] = useState<Tag[]>([]);
-
   useEffect(() => {
     if (media) {
       setDescription(media.private_description || "");
       setSelectedAlbumId(media.album?.id || "");
       setLocalTags(media.tags || []);
+      // Reset edit panel state when changing media if on mobile, optional.
+      // setShowEditPanel(false);
     }
   }, [media]);
 
@@ -125,66 +133,105 @@ export default function MediaModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-black/90 backdrop-blur-sm">
-      <div className="bg-slate-900 border border-white/10 rounded-2xl sm:rounded-3xl w-full max-w-5xl overflow-hidden flex flex-col md:flex-row h-[90vh] md:max-h-[90vh]">
-        
-        {/* Left Side: Media Viewer */}
-        <div 
-          className="w-full h-[55%] md:h-full md:w-1/2 bg-black flex items-center justify-center relative group shrink-0"
-          onTouchStart={handleTouchStart}
-          onTouchEnd={handleTouchEnd}
-        >
-          {/* Mobile swipe hint overlay (fades out) */}
-          <div className="md:hidden absolute top-4 left-1/2 -translate-x-1/2 bg-black/50 text-white/70 text-xs px-3 py-1 rounded-full backdrop-blur-md opacity-0 animate-[fadeOut_2s_ease-out_1s_forwards] pointer-events-none z-20">
-            Swipe to navigate
-          </div>
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/95 backdrop-blur-xl">
+      {/* Fullscreen Viewer Area */}
+      <div 
+        className="absolute inset-0 flex items-center justify-center overflow-hidden"
+        onTouchStart={handleTouchStart}
+        onTouchEnd={handleTouchEnd}
+      >
+        {media.media_type === "VIDEO" ? (
+          <video
+            src={media.media_url}
+            controls
+            autoPlay
+            className="w-full h-full object-contain"
+          />
+        ) : (
+          <TransformWrapper
+            initialScale={1}
+            minScale={1}
+            maxScale={4}
+            centerOnInit
+            wheel={{ step: 0.1 }}
+            pinch={{ step: 5 }}
+            doubleClick={{ disabled: false, step: 1, mode: "toggle" }}
+          >
+            {({ zoomIn, zoomOut, resetTransform }) => (
+              <TransformComponent wrapperClass="w-full h-full !flex items-center justify-center" contentClass="w-full h-full flex items-center justify-center">
+                <img
+                  src={media.media_url || media.thumbnail_url}
+                  alt="Memory"
+                  className="max-w-full max-h-[100dvh] object-contain select-none"
+                  draggable={false}
+                />
+              </TransformComponent>
+            )}
+          </TransformWrapper>
+        )}
 
-          {currentIndex > 0 && (
-            <button 
-              onClick={handlePrev} 
-              className="absolute left-2 md:left-4 top-1/2 -translate-y-1/2 bg-black/50 hover:bg-black/80 text-white p-2 md:p-3 rounded-full opacity-0 md:group-hover:opacity-100 transition-all backdrop-blur-md z-10 border border-white/10"
-            >
-              <ChevronLeft className="w-5 h-5 md:w-6 md:h-6" />
-            </button>
-          )}
-          {currentIndex < mediaList.length - 1 && (
-            <button 
-              onClick={handleNext} 
-              className="absolute right-2 md:right-4 top-1/2 -translate-y-1/2 bg-black/50 hover:bg-black/80 text-white p-2 md:p-3 rounded-full opacity-0 md:group-hover:opacity-100 transition-all backdrop-blur-md z-10 border border-white/10"
-            >
-              <ChevronRight className="w-5 h-5 md:w-6 md:h-6" />
-            </button>
-          )}
-
-          {media.media_type === "VIDEO" ? (
-            <video
-              src={media.media_url}
-              controls
-              className="max-w-full h-full object-contain"
-            />
-          ) : (
-            <img
-              src={media.media_url || media.thumbnail_url}
-              alt="Memory"
-              className="max-w-full h-full object-contain select-none"
-              draggable={false}
-            />
-          )}
+        {/* Mobile swipe hint overlay (fades out) */}
+        <div className="md:hidden absolute top-4 left-1/2 -translate-x-1/2 bg-black/50 text-white/70 text-xs px-3 py-1 rounded-full backdrop-blur-md opacity-0 animate-[fadeOut_2s_ease-out_1s_forwards] pointer-events-none z-20">
+          Swipe to navigate
         </div>
 
-        {/* Right Side: Annotations */}
-        <div className="w-full h-[45%] md:h-full md:w-1/2 p-4 md:p-6 flex flex-col overflow-y-auto">
-          <div className="flex justify-between items-center mb-6">
-            <h2 className="text-xl font-bold text-white">Memory Details</h2>
-            <button
-              onClick={onClose}
-              className="p-2 bg-white/5 hover:bg-white/10 rounded-full text-slate-400 hover:text-white transition-colors"
-            >
-              <X className="w-5 h-5" />
-            </button>
+        {/* Navigation Buttons */}
+        {currentIndex > 0 && (
+          <button 
+            onClick={handlePrev} 
+            className="absolute left-4 top-1/2 -translate-y-1/2 bg-black/50 hover:bg-black/80 text-white p-3 md:p-4 rounded-full transition-all backdrop-blur-md z-30 border border-white/10 hidden md:flex"
+          >
+            <ChevronLeft className="w-6 h-6 md:w-8 md:h-8" />
+          </button>
+        )}
+        {currentIndex < mediaList.length - 1 && (
+          <button 
+            onClick={handleNext} 
+            className="absolute right-4 top-1/2 -translate-y-1/2 bg-black/50 hover:bg-black/80 text-white p-3 md:p-4 rounded-full transition-all backdrop-blur-md z-30 border border-white/10 hidden md:flex"
+          >
+            <ChevronRight className="w-6 h-6 md:w-8 md:h-8" />
+          </button>
+        )}
+      </div>
+
+      {/* Top Controls Overlay */}
+      <div className="absolute top-0 left-0 right-0 p-4 flex justify-between items-start z-40 bg-gradient-to-b from-black/80 to-transparent pointer-events-none">
+        <div className="pointer-events-auto">
+          <button
+            onClick={onClose}
+            className="p-3 bg-black/50 hover:bg-black/80 rounded-full text-white transition-all backdrop-blur-md border border-white/10"
+          >
+            <X className="w-6 h-6" />
+          </button>
+        </div>
+        <div className="pointer-events-auto">
+          <button
+            onClick={() => setShowEditPanel(!showEditPanel)}
+            className={`p-3 rounded-full text-white transition-all backdrop-blur-md border ${
+              showEditPanel 
+                ? "bg-pink-500 hover:bg-pink-600 border-pink-400" 
+                : "bg-black/50 hover:bg-black/80 border-white/10"
+            }`}
+            title="Edit Memory Details"
+          >
+            <Info className="w-6 h-6" />
+          </button>
+        </div>
+      </div>
+
+      {/* Slide-out Edit Panel */}
+      <div 
+        className={`absolute top-0 right-0 bottom-0 w-full md:w-[450px] bg-slate-900/95 backdrop-blur-3xl border-l border-white/10 z-40 flex flex-col transition-transform duration-300 ease-out shadow-2xl ${
+          showEditPanel ? "translate-x-0" : "translate-x-full"
+        }`}
+      >
+        <div className="p-6 flex-grow overflow-y-auto mt-16 md:mt-20">
+          <div className="mb-8">
+            <h2 className="text-2xl font-bold text-white mb-2">Memory Details</h2>
+            <p className="text-slate-400 text-sm">Add context, tags, or add to an album.</p>
           </div>
 
-          <div className="space-y-6 flex-grow">
+          <div className="space-y-6">
             {/* Private Description */}
             <div>
               <label className="block text-sm font-medium text-slate-300 mb-2">
@@ -194,19 +241,19 @@ export default function MediaModal({
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
                 placeholder="Write down your thoughts, memories, or context..."
-                className="w-full bg-black/20 border border-white/10 rounded-xl p-4 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-pink-500 min-h-[120px]"
+                className="w-full bg-black/30 border border-white/10 rounded-xl p-4 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-pink-500 min-h-[120px] resize-none"
               />
             </div>
 
             {/* Album Selection */}
             <div>
               <label className="block text-sm font-medium text-slate-300 mb-2 flex items-center gap-2">
-                <Folder className="w-4 h-4" /> Add to Album
+                <Folder className="w-4 h-4 text-pink-400" /> Add to Album
               </label>
               <select
                 value={selectedAlbumId}
                 onChange={(e) => setSelectedAlbumId(e.target.value)}
-                className="w-full bg-black/20 border border-white/10 rounded-xl p-3 text-white focus:outline-none focus:ring-2 focus:ring-pink-500"
+                className="w-full bg-black/30 border border-white/10 rounded-xl p-3 text-white focus:outline-none focus:ring-2 focus:ring-pink-500 appearance-none"
               >
                 <option value="">No Album</option>
                 {albums.map((album) => (
@@ -220,32 +267,32 @@ export default function MediaModal({
             <button
               onClick={handleSaveDescriptionAndAlbum}
               disabled={isSaving}
-              className="w-full bg-white/10 hover:bg-white/20 text-white py-3 rounded-xl font-medium transition-colors flex items-center justify-center gap-2"
+              className="w-full bg-pink-500 hover:bg-pink-600 text-white py-3.5 rounded-xl font-medium transition-colors flex items-center justify-center gap-2 shadow-lg shadow-pink-500/20"
             >
-              <Save className="w-4 h-4" />
+              <Save className="w-5 h-5" />
               {isSaving ? "Saving..." : "Save Details"}
             </button>
 
-            <hr className="border-white/10" />
+            <hr className="border-white/10 my-8" />
 
             {/* Tags */}
             <div>
-              <label className="block text-sm font-medium text-slate-300 mb-2 flex items-center gap-2">
-                <TagIcon className="w-4 h-4" /> Tags
+              <label className="block text-sm font-medium text-slate-300 mb-3 flex items-center gap-2">
+                <TagIcon className="w-4 h-4 text-violet-400" /> Tags
               </label>
-              <div className="flex flex-wrap gap-2 mb-3">
+              <div className="flex flex-wrap gap-2 mb-4">
                 {localTags.map((tag) => (
                   <span
                     key={tag.id}
-                    className="bg-pink-500/20 text-pink-300 px-3 py-1 rounded-full text-sm border border-pink-500/30 flex items-center gap-2"
+                    className="bg-white/5 text-slate-200 px-3 py-1.5 rounded-lg text-sm border border-white/10 flex items-center gap-2"
                   >
                     #{tag.tag_name}
                     <button
                       type="button"
                       onClick={() => handleRemoveTag(tag.id)}
-                      className="hover:text-pink-100"
+                      className="hover:text-pink-400 text-slate-400 transition-colors"
                     >
-                      <X className="w-3 h-3" />
+                      <X className="w-3.5 h-3.5" />
                     </button>
                   </span>
                 ))}
@@ -256,11 +303,11 @@ export default function MediaModal({
                   value={newTag}
                   onChange={(e) => setNewTag(e.target.value)}
                   placeholder="Add a tag (e.g. vacation)"
-                  className="flex-grow bg-black/20 border border-white/10 rounded-lg p-2.5 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-pink-500"
+                  className="flex-grow bg-black/30 border border-white/10 rounded-xl p-3 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-violet-500"
                 />
                 <button
                   type="submit"
-                  className="bg-pink-500 hover:bg-pink-400 text-white px-4 py-2.5 rounded-lg font-medium transition-colors"
+                  className="bg-white/10 hover:bg-white/20 text-white px-5 py-3 rounded-xl font-medium transition-colors"
                 >
                   Add
                 </button>
@@ -269,9 +316,9 @@ export default function MediaModal({
 
             {/* Original Caption */}
             {media.caption && (
-              <div className="bg-white/5 border border-white/10 rounded-xl p-4 mt-6">
-                <p className="text-xs text-slate-500 uppercase font-semibold tracking-wider mb-2">Original Instagram Caption</p>
-                <p className="text-slate-300 text-sm">{media.caption}</p>
+              <div className="bg-white/5 border border-white/10 rounded-xl p-5 mt-8">
+                <p className="text-xs text-pink-400 uppercase font-semibold tracking-wider mb-3">Original Instagram Caption</p>
+                <p className="text-slate-300 text-sm leading-relaxed">{media.caption}</p>
               </div>
             )}
           </div>
