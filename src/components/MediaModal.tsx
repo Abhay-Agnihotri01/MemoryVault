@@ -80,8 +80,11 @@ export default function MediaModal({
       setSelectedAlbumId(media.album?.id || "");
       setLocalTags(media.tags || []);
     }
-    fetchAlbums();
   }, [media]);
+
+  useEffect(() => {
+    fetchAlbums();
+  }, []);
 
   const fetchAlbums = async () => {
     const res = await fetch("/api/albums");
