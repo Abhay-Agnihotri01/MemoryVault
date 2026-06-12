@@ -22,13 +22,24 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
     }
 
-    // Check if person already exists with this name
+    // Check if person already exists with this name (exact match)
     let person = await prisma.person.findFirst({
       where: { 
         user_id: user.id, 
         name: { equals: name, mode: 'insensitive' } 
       }
     });
+
+    // If no exact match, try to find an existing profile that contains this name 
+    // (e.g. naming "Abhay" will match an existing "Abhay, Anushka" profile)
+    if (!person) {
+      person = await prisma.person.findFirst({
+        where: {
+          user_id: user.id,
+          name: { contains: name, mode: 'insensitive' }
+        }
+      });
+    }
 
     if (!person) {
       // Create the Person
