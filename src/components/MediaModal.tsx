@@ -154,30 +154,31 @@ export default function MediaModal({
               className="w-full h-full object-contain"
             />
           ) : (
-            <TransformWrapper
-              className="w-full h-full"
-              key={media.id} // Forces fresh mount for new media to reset zoom completely
-              initialScale={1}
-              minScale={1}
-              maxScale={4}
-              centerOnInit
-              wheel={{ step: 0.1 }}
-              pinch={{ step: 5 }}
-              doubleClick={{ disabled: false, step: 1, mode: "toggle" }}
-              panning={{ disabled: !isZoomed }} // Only allow dragging image around if we are actually zoomed in
-              onTransform={(ref) => setIsZoomed(ref.state.scale > 1.05)} // Update zoom state
-            >
-              {({ zoomIn, zoomOut, resetTransform }) => (
-                <TransformComponent wrapperClass="w-full h-full !flex items-center justify-center" contentClass="w-full h-full flex items-center justify-center">
-                  <img
-                    src={media.media_url || media.thumbnail_url}
-                    alt="Memory"
-                    className="w-full h-full object-contain select-none"
-                    draggable={false}
-                  />
-                </TransformComponent>
-              )}
-            </TransformWrapper>
+            <div className="w-full h-full">
+              <TransformWrapper
+                key={media.id} // Forces fresh mount for new media to reset zoom completely
+                initialScale={1}
+                minScale={1}
+                maxScale={4}
+                centerOnInit
+                wheel={{ step: 0.1 }}
+                pinch={{ step: 5 }}
+                doubleClick={{ disabled: false, step: 1, mode: "toggle" }}
+                panning={{ disabled: !isZoomed }} // Only allow dragging image around if we are actually zoomed in
+                onTransform={(ref) => setIsZoomed(ref.state.scale > 1.05)} // Update zoom state
+              >
+                {({ zoomIn, zoomOut, resetTransform }) => (
+                  <TransformComponent wrapperClass="w-full h-full !flex items-center justify-center" contentClass="w-full h-full flex items-center justify-center">
+                    <img
+                      src={media.media_url || media.thumbnail_url}
+                      alt="Memory"
+                      className="w-full h-full object-contain select-none"
+                      draggable={false}
+                    />
+                  </TransformComponent>
+                )}
+              </TransformWrapper>
+            </div>
           )}
 
           {/* Mobile swipe hint overlay (fades out) */}
