@@ -142,7 +142,7 @@ export default function MediaModal({
         
         {/* Fullscreen Viewer Area */}
         <div 
-          className="absolute md:relative inset-0 md:inset-auto md:flex-1 flex items-center justify-center overflow-hidden bg-black"
+          className="absolute md:relative inset-0 md:inset-auto md:flex-1 flex items-center justify-center overflow-hidden bg-black min-w-0 min-h-0"
           onTouchStart={handleTouchStart}
           onTouchEnd={handleTouchEnd}
         >
@@ -155,6 +155,7 @@ export default function MediaModal({
             />
           ) : (
             <TransformWrapper
+              className="w-full h-full"
               key={media.id} // Forces fresh mount for new media to reset zoom completely
               initialScale={1}
               minScale={1}
@@ -171,7 +172,7 @@ export default function MediaModal({
                   <img
                     src={media.media_url || media.thumbnail_url}
                     alt="Memory"
-                    className="max-w-full max-h-[100dvh] md:max-h-[90vh] object-contain select-none"
+                    className="w-full h-full object-contain select-none"
                     draggable={false}
                   />
                 </TransformComponent>
