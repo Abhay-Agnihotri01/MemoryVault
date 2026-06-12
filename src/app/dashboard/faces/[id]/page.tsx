@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { redirect } from "next/navigation";
 import { UserSearch, ArrowLeft } from "lucide-react";
 import Link from "next/link";
+import PersonHeader from "./PersonHeader";
 
 export default async function PersonFacesPage({ params }: { params: Promise<{ id: string }> }) {
   const resolvedParams = await params;
@@ -49,21 +50,7 @@ export default async function PersonFacesPage({ params }: { params: Promise<{ id
           <ArrowLeft className="w-4 h-4" />
           Back
         </Link>
-        <div className="flex items-end gap-6 bg-white/5 p-6 rounded-2xl border border-white/10">
-          <div className="w-24 h-24 rounded-2xl bg-slate-800 overflow-hidden shrink-0 border border-white/10 shadow-xl">
-            {person.cover_image_url ? (
-              <img src={person.cover_image_url} alt={person.name} className="w-full h-full object-cover" />
-            ) : (
-              <div className="w-full h-full flex items-center justify-center text-slate-500"><UserSearch className="w-8 h-8" /></div>
-            )}
-          </div>
-          <div className="pb-2">
-            <h1 className="text-3xl font-bold text-white mb-2">{person.name}</h1>
-            <p className="text-slate-400 text-sm">
-              The AI found {media.length} {media.length === 1 ? 'photo' : 'photos'} of {person.name} in your vault.
-            </p>
-          </div>
-        </div>
+        <PersonHeader person={person} mediaCount={media.length} />
       </div>
 
       <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
