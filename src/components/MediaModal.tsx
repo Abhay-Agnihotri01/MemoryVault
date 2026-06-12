@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
 import { ChevronLeft, ChevronRight, X, Tag as TagIcon, Folder, Save, Info } from "lucide-react";
+import { TransformWrapper, TransformComponent } from "react-zoom-pan-pinch";
 
 type Tag = { id: string; tag_name: string };
 type Album = { id: string; title: string };
@@ -143,14 +144,49 @@ export default function MediaModal({
     <div className="fixed top-0 right-0 bottom-0 left-0 md:left-64 z-[9999] flex items-center justify-center bg-black">
       <div className="w-full h-full flex flex-col md:flex-row relative overflow-hidden">
         
-        <div className="flex-1 bg-black flex items-center justify-center relative min-w-0 min-h-0">
-          <img
-            src={media.media_url || media.thumbnail_url}
-            alt="Memory"
-            style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain' }}
-            className="select-none"
-            draggable={false}
-          />
+        <div 
+          className="flex-1 bg-black flex items-center justify-center relative min-w-0 min-h-0"
+          onTouchStart={handleTouchStart}
+          onTouchEnd={handleTouchEnd}
+        >
+          {media.media_type === "VIDEO" ? (
+            <video
+              src={media.media_url}
+              controls
+              autoPlay
+              className="max-w-full max-h-full object-contain"
+            />
+          ) : (
+            <div className="absolute inset-0 flex items-center justify-center">
+              <TransformWrapper
+                key={media.id}
+                initialScale={1}
+                minScale={1}
+                maxScale={4}
+                centerOnInit
+                wheel={{ step: 0.1 }}
+                pinch={{ step: 5 }}
+                doubleClick={{ disabled: false, step: 1, mode: "toggle" }}
+                panning={{ disabled: !isZoomed }}
+                onTransformed={(ref) => setIsZoomed(ref.state.scale > 1.05)}
+              >
+                {({ zoomIn, zoomOut, resetTransform }) => (
+                  <TransformComponent 
+                    wrapperStyle={{ width: "100%", height: "100%" }} 
+                    contentStyle={{ width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center" }}
+                  >
+                    <img
+                      src={media.media_url || media.thumbnail_url}
+                      alt="Memory"
+                      style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain' }}
+                      className="select-none m-auto"
+                      draggable={false}
+                    />
+                  </TransformComponent>
+                )}
+              </TransformWrapper>
+            </div>
+          )}
 
           {/* Mobile swipe hint overlay (fades out) */}
           <div className="md:hidden absolute top-20 left-1/2 -translate-x-1/2 bg-black/50 text-white/70 text-xs px-3 py-1 rounded-full backdrop-blur-md opacity-0 animate-[fadeOut_2s_ease-out_1s_forwards] pointer-events-none z-20">
