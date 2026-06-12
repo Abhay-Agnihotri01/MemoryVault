@@ -9,6 +9,7 @@ import MediaCard from "@/components/MediaCard";
 import BulkActionBar from "@/components/BulkActionBar";
 import SearchBar from "@/components/SearchBar";
 import LoadingSkeleton from "@/components/LoadingSkeleton";
+import { usePhotoViewer } from "@/hooks/usePhotoViewer";
 
 type Tag = { id: string; tag_name: string };
 type Album = { id: string; title: string };
@@ -33,7 +34,7 @@ export default function DashboardPage() {
   const [isSyncing, setIsSyncing] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   
-  const [selectedMedia, setSelectedMedia] = useState<MediaItem | null>(null);
+  const { selectedMedia, openMedia, closeMedia } = usePhotoViewer(media);
   const [searchQuery, setSearchQuery] = useState("");
   
   // Bulk Action State
@@ -51,12 +52,6 @@ export default function DashboardPage() {
       if (res.ok) {
         const data = await res.json();
         setMedia(data.media || []);
-        
-        setSelectedMedia(prev => {
-          if (!prev) return prev;
-          const updated = data.media.find((m: MediaItem) => m.id === prev.id);
-          return updated || prev;
-        });
       }
     } catch (err) {
       console.error("Failed to fetch local media:", err);
@@ -219,7 +214,7 @@ export default function DashboardPage() {
               item={item}
               isSelected={selectedMediaIds.has(item.id)}
               onSelect={() => toggleSelection(item.id)}
-              onClick={() => setSelectedMedia(item)}
+              onClick={() => openMedia(item)}
               onHoverDelete={() => handleHoverDelete(item.id)}
               onToggleFavorite={() => handleToggleFavorite(item.id, item.is_favorite)}
             />
@@ -231,8 +226,8 @@ export default function DashboardPage() {
         <MediaModal
           mediaList={media}
           currentMediaId={selectedMedia.id}
-          onNavigate={(newMedia) => setSelectedMedia(newMedia as MediaItem)}
-          onClose={() => setSelectedMedia(null)}
+          onNavigate={(newMedia) => openMedia(newMedia as MediaItem)}
+          onClose={closeMedia}
           onUpdate={fetchLocalMedia}
         />
       )}

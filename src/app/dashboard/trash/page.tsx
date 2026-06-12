@@ -6,13 +6,14 @@ import MediaModal from "@/components/MediaModal";
 import MediaCard from "@/components/MediaCard";
 import BulkActionBar from "@/components/BulkActionBar";
 import LoadingSkeleton from "@/components/LoadingSkeleton";
+import { usePhotoViewer } from "@/hooks/usePhotoViewer";
 
 type MediaItem = any;
 
 export default function TrashPage() {
   const [media, setMedia] = useState<MediaItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [selectedMedia, setSelectedMedia] = useState<MediaItem | null>(null);
+  const { selectedMedia, openMedia, closeMedia } = usePhotoViewer(media);
 
   const [selectedMediaIds, setSelectedMediaIds] = useState<Set<string>>(new Set());
   const [isProcessingBulk, setIsProcessingBulk] = useState(false);
@@ -98,7 +99,7 @@ export default function TrashPage() {
               item={item}
               isSelected={selectedMediaIds.has(item.id)}
               onSelect={() => toggleSelection(item.id)}
-              onClick={() => setSelectedMedia(item)}
+              onClick={() => openMedia(item)}
               onHoverDelete={async () => {
                 try {
                   await fetch("/api/media/bulk", {
@@ -120,8 +121,8 @@ export default function TrashPage() {
         <MediaModal
         mediaList={media}
         currentMediaId={selectedMedia ? selectedMedia.id : null}
-        onNavigate={(newMedia) => setSelectedMedia(newMedia as MediaItem)}
-        onClose={() => setSelectedMedia(null)}
+        onNavigate={(newMedia) => openMedia(newMedia as MediaItem)}
+        onClose={closeMedia}
         onUpdate={fetchTrashMedia}
       />
       )}

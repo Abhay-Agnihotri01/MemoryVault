@@ -6,13 +6,14 @@ import MediaModal from "@/components/MediaModal";
 import MediaCard from "@/components/MediaCard";
 import BulkActionBar from "@/components/BulkActionBar";
 import LoadingSkeleton from "@/components/LoadingSkeleton";
+import { usePhotoViewer } from "@/hooks/usePhotoViewer";
 
 type MediaItem = any;
 
 export default function TimelinePage() {
   const [media, setMedia] = useState<MediaItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [selectedMedia, setSelectedMedia] = useState<MediaItem | null>(null);
+  const { selectedMedia, openMedia, closeMedia } = usePhotoViewer(media);
 
   const [selectedMediaIds, setSelectedMediaIds] = useState<Set<string>>(new Set());
   const [isProcessingBulk, setIsProcessingBulk] = useState(false);
@@ -90,8 +91,6 @@ export default function TimelinePage() {
     });
   };
 
-  const [activeMonthList, setActiveMonthList] = useState<MediaItem[] | null>(null);
-
   const groupedMedia = media.reduce((acc: Record<string, MediaItem[]>, item) => {
     const date = new Date(item.created_at);
     const monthYear = date.toLocaleDateString("en-US", { month: "long", year: "numeric" });
@@ -143,8 +142,7 @@ export default function TimelinePage() {
                   {/* Polaroid Deck */}
                   <div 
                     onClick={() => {
-                      setActiveMonthList(items);
-                      setSelectedMedia(items[0]);
+                      openMedia(items[0]);
                     }}
                     className="relative w-48 h-48 sm:w-64 sm:h-64 cursor-pointer group/deck"
                   >
@@ -208,16 +206,15 @@ export default function TimelinePage() {
         </div>
       )}
 
-      <MediaModal
-        mediaList={activeMonthList || []}
-        currentMediaId={selectedMedia ? selectedMedia.id : null}
-        onNavigate={(newMedia) => setSelectedMedia(newMedia as MediaItem)}
-        onClose={() => {
-          setSelectedMedia(null);
-          setActiveMonthList(null);
-        }}
-        onUpdate={() => fetchMedia()}
-      />
+      {selectedMedia && (
+        <MediaModal
+          mediaList={media}
+          currentMediaId={selectedMedia.id}
+          onNavigate={(newMedia) => openMedia(newMedia as MediaItem)}
+          onClose={closeMedia}
+          onUpdate={() => fetchMedia()}
+        />
+      )}
 
       <BulkActionBar
         selectedCount={selectedMediaIds.size}
