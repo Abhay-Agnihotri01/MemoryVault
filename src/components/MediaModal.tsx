@@ -1,8 +1,8 @@
 "use client";
 
 import React, { useState, useEffect, useRef } from "react";
+import { createPortal } from "react-dom";
 import { ChevronLeft, ChevronRight, X, Tag as TagIcon, Folder, Save, Info } from "lucide-react";
-import { TransformWrapper, TransformComponent } from "react-zoom-pan-pinch";
 
 type Tag = { id: string; tag_name: string };
 type Album = { id: string; title: string };
@@ -106,7 +106,10 @@ export default function MediaModal({
     }
   };
 
-  if (!media) return null;
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
+
+  if (!media || !mounted) return null;
 
   const handleSaveDescriptionAndAlbum = async () => {
     setIsSaving(true);
@@ -136,50 +139,18 @@ export default function MediaModal({
     setLocalTags(localTags.filter(t => t.id !== tagId));
   };
 
-  return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/95 backdrop-blur-xl md:p-6">
-      <div className="w-full h-full md:max-w-[95vw] md:h-[90vh] md:bg-slate-900 md:rounded-3xl md:border md:border-white/10 md:shadow-2xl md:overflow-hidden flex flex-col md:flex-row relative">
+  return createPortal(
+    <div className="fixed top-0 right-0 bottom-0 left-0 md:left-64 z-[9999] flex items-center justify-center bg-black">
+      <div className="w-full h-full flex flex-col md:flex-row relative overflow-hidden">
         
-        {/* Fullscreen Viewer Area */}
-        <div 
-          className="absolute md:relative inset-0 md:inset-auto md:flex-1 flex items-center justify-center overflow-hidden bg-black min-w-0 min-h-0"
-          onTouchStart={handleTouchStart}
-          onTouchEnd={handleTouchEnd}
-        >
-          {media.media_type === "VIDEO" ? (
-            <video
-              src={media.media_url}
-              controls
-              autoPlay
-              className="w-full h-full object-contain"
-            />
-          ) : (
-            <div className="w-full h-full">
-              <TransformWrapper
-                key={media.id} // Forces fresh mount for new media to reset zoom completely
-                initialScale={1}
-                minScale={1}
-                maxScale={4}
-                centerOnInit
-                wheel={{ step: 0.1 }}
-                pinch={{ step: 5 }}
-                doubleClick={{ disabled: false, step: 1, mode: "toggle" }}
-                panning={{ disabled: !isZoomed }} // Only allow dragging image around if we are actually zoomed in
-                onTransform={(ref) => setIsZoomed(ref.state.scale > 1.05)} // Update zoom state
-              >
-                {({ zoomIn, zoomOut, resetTransform }) => (
-                  <TransformComponent wrapperClass="w-full h-full !flex items-center justify-center" contentClass="w-full h-full flex items-center justify-center">
-                    <img
-                      src={media.media_url || media.thumbnail_url}
-                      alt="Memory"
-                      className="w-full h-full object-contain select-none"
-                      draggable={false}
-                    />
-                  </TransformComponent>
-                )}
-              </TransformWrapper>
-            </div>
-          )}
+        <div className="flex-1 bg-black flex items-center justify-center relative min-w-0 min-h-0">
+          <img
+            src={media.media_url || media.thumbnail_url}
+            alt="Memory"
+            style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain' }}
+            className="select-none"
+            draggable={false}
+          />
 
           {/* Mobile swipe hint overlay (fades out) */}
           <div className="md:hidden absolute top-20 left-1/2 -translate-x-1/2 bg-black/50 text-white/70 text-xs px-3 py-1 rounded-full backdrop-blur-md opacity-0 animate-[fadeOut_2s_ease-out_1s_forwards] pointer-events-none z-20">
@@ -232,7 +203,7 @@ export default function MediaModal({
 
         {/* Edit Panel (Mobile Slide-out OR Desktop Permanent Right Side) */}
         <div 
-          className={`absolute md:relative top-0 right-0 bottom-0 w-full md:w-[400px] lg:w-[450px] bg-slate-900/95 md:bg-transparent backdrop-blur-3xl md:backdrop-blur-none border-l border-white/10 z-40 flex flex-col transition-transform duration-300 ease-out shadow-2xl md:shadow-none ${
+          className={`absolute md:relative top-0 right-0 bottom-0 w-full md:w-[400px] lg:w-[450px] bg-slate-900/95 md:bg-slate-900 backdrop-blur-3xl md:backdrop-blur-none border-l border-white/10 z-40 flex flex-col transition-transform duration-300 ease-out shadow-2xl md:shadow-none ${
             showEditPanel ? "translate-x-0" : "translate-x-full md:translate-x-0"
           }`}
         >
@@ -355,6 +326,7 @@ export default function MediaModal({
           </div>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }
