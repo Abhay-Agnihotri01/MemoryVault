@@ -28,17 +28,26 @@ export async function fetchInstagramMedia(accessToken: string) {
 
     const igAccountId = linkedPage.instagram_business_account.id;
 
-    // Step 2: Fetch Media from the Instagram Account
-    const mediaRes = await fetch(
-      `https://graph.facebook.com/v18.0/${igAccountId}/media?fields=id,caption,media_type,media_url,thumbnail_url,timestamp,permalink,children{id,media_type,media_url,thumbnail_url}&limit=50&access_token=${accessToken}`
-    );
-    const mediaData = await mediaRes.json();
+    // Step 2: Fetch all Media from the Instagram Account (with pagination)
+    let mediaItems: any[] = [];
+    let nextUrl: string | null = `https://graph.facebook.com/v18.0/${igAccountId}/media?fields=id,caption,media_type,media_url,thumbnail_url,timestamp,permalink,children{id,media_type,media_url,thumbnail_url}&limit=100&access_token=${accessToken}`;
 
-    if (mediaData.error) {
-      throw new Error(`Instagram API Error: ${mediaData.error.message}`);
+    while (nextUrl) {
+      const mediaRes = await fetch(nextUrl);
+      const mediaData: any = await mediaRes.json();
+
+      if (mediaData.error) {
+        throw new Error(`Instagram API Error: ${mediaData.error.message}`);
+      }
+
+      if (mediaData.data && mediaData.data.length > 0) {
+        mediaItems.push(...mediaData.data);
+      }
+
+      nextUrl = mediaData.paging?.next || null;
     }
 
-    return mediaData.data;
+    return mediaItems;
   } catch (error) {
     console.error("Error fetching Instagram media:", error);
     throw error;

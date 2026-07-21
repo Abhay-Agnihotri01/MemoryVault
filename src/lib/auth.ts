@@ -38,7 +38,15 @@ export const authOptions: AuthOptions = {
   ],
   callbacks: {
     async signIn({ user, account, profile }) {
-      if (!account || !account.providerAccountId) return false;
+      console.log("=== NextAuth signIn Callback ===");
+      console.log("Provider:", account?.provider);
+      console.log("Account ID:", account?.providerAccountId);
+      console.log("Token in account:", account?.access_token ? account.access_token.substring(0, 15) + "..." : "NONE");
+      
+      if (!account || !account.providerAccountId) {
+        console.log("Sign-in failed: No account or providerAccountId");
+        return false;
+      }
 
       // Sync user to our database
       const existingUser = await prisma.user.findFirst({
@@ -46,7 +54,8 @@ export const authOptions: AuthOptions = {
       });
 
       if (existingUser) {
-        await prisma.user.update({
+        console.log("Updating existing user:", existingUser.id);
+        const updated = await prisma.user.update({
           where: { id: existingUser.id },
           data: {
             access_token: account.access_token,
@@ -54,8 +63,10 @@ export const authOptions: AuthOptions = {
             name: user.name,
           }
         });
+        console.log("Update database success. Access token set to:", updated.access_token ? updated.access_token.substring(0, 15) + "..." : "NONE");
       } else {
-        await prisma.user.create({
+        console.log("Creating new user in database");
+        const created = await prisma.user.create({
           data: {
             instagram_id: account.providerAccountId,
             access_token: account.access_token,
@@ -63,18 +74,22 @@ export const authOptions: AuthOptions = {
             name: user.name,
           }
         });
+        console.log("Create database success. Access token set to:", created.access_token ? created.access_token.substring(0, 15) + "..." : "NONE");
       }
 
       return true;
     },
     async jwt({ token, account }) {
       if (account) {
+        console.log("=== NextAuth jwt Callback ===");
+        console.log("Setting accessToken in token");
         token.accessToken = account.access_token;
         token.providerAccountId = account.providerAccountId;
       }
       return token;
     },
     async session({ session, token }) {
+      console.log("=== NextAuth session Callback ===");
       session.accessToken = token.accessToken as string;
       session.providerAccountId = token.providerAccountId as string;
       return session;
